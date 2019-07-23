@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express';
 import { body, check, validationResult } from 'express-validator/check';
 import Rebalancer from 'lnrpc-circular-rebalancer/dist/rebalancer';
 import { logger } from '../../services';
-import { ChannelRebalancer } from '../../services/lnd';
+import { ChannelRebalancer, Lightning } from '../../services/lnd';
 import { BaseRoute } from '../route';
 
 /**
@@ -52,15 +52,13 @@ export class ChannelRoute extends BaseRoute {
    * @param next {NextFunction}
    */
   private async get(req: Request, res: Response, next: NextFunction) {
-    // try {
-    //   const { paymentRequest } = await Lightning.client.addInvoice({
-    //     value: '1000',
-    //   });
-    //   logger.info(`[ChannelRoute] Invoice created: ${paymentRequest}.`);
-    //   res.json({ invoice: paymentRequest });
-    // } catch (err) {
-    //   res.status(400).json({ error: err });
-    // }
+    try {
+      const { channels } = await Lightning.client.listChannels();
+      logger.info(`[ChannelRoute] Retrived channels (${channels.length}).`);
+      res.json(channels);
+    } catch (err) {
+      res.status(400).json({ error: err });
+    }
     next();
   }
 
@@ -82,15 +80,17 @@ export class ChannelRoute extends BaseRoute {
       res.status(400).json({ error: errors.array() });
       return;
     }
-    console.log('req: ', req);
     try {
-      logger.info(`[ChannelRoute] /rebalance`);
+      const { amtSats, publicKey } = req.body;
+      logger.info(
+        `[ChannelRoute] /rebalance (${amtSats} sats) to ${publicKey}`,
+      );
       ChannelRebalancer.rebalancer.rebalanceChannelWithAmountByPublicKey(
-        req.body.amtSats,
-        req.body.publicKey,
+        amtSats,
+        publicKey,
       );
       res.status(200).json({
-        foo: 'bar',
+        success: 'true',
       });
     } catch (err) {
       logger.info(`[ChannelRoute] /pay error: ${err}.`);
