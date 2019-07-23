@@ -2,7 +2,11 @@ import dotenv from 'dotenv';
 import { Server } from './app';
 import { isTestEnv } from './env';
 import { logger } from './services';
-import { Lightning, LnRpcSubscriptionManager } from './services/lnd';
+import {
+  ChannelRebalancer,
+  Lightning,
+  LnRpcSubscriptionManager,
+} from './services/lnd';
 
 dotenv.config();
 
@@ -11,6 +15,7 @@ export const app = Server.bootstrap().app;
 if (!isTestEnv()) {
   (async () => {
     await Lightning.init();
+    await ChannelRebalancer.init(Lightning.client);
     logger.info(
       `[LND] Pubkey: ${(await Lightning.client.getInfo()).identityPubkey}.`,
     );

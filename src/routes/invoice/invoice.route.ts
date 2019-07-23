@@ -117,5 +117,6 @@ export class InvoiceRoute extends BaseRoute {
       logger.info(`[InvoiceRoute] /pay error: ${err}.`);
       res.status(400).json({ error: err.message });
     }
+    next();
   }
 }
