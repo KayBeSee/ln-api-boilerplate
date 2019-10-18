@@ -81,17 +81,22 @@ export class ChannelRoute extends BaseRoute {
       return;
     }
     try {
-      const { amtSats, publicKey } = req.body;
+      console.log('rebalance req: ', req.body);
+      const {
+        targetLocalBalance,
+        targetChannelId,
+        fundingChannelId,
+      } = req.body;
       logger.info(
-        `[ChannelRoute] /rebalance (${amtSats} sats) to ${publicKey}`,
+        `[ChannelRoute] /rebalance (${targetLocalBalance} sats) to ${targetChannelId} from ${fundingChannelId}`,
       );
-      ChannelRebalancer.rebalancer.rebalanceChannelWithAmountByPublicKey(
-        amtSats,
-        publicKey,
+      const resp = await ChannelRebalancer.rebalancer.setLocalBalanceToAmount(
+        targetLocalBalance,
+        targetChannelId,
+        fundingChannelId,
       );
-      res.status(200).json({
-        success: 'true',
-      });
+      console.log('resp: ', resp);
+      res.status(200).json(resp);
     } catch (err) {
       logger.info(`[ChannelRoute] /pay error: ${err}.`);
       res.status(400).json({ error: err.message });
